@@ -26,6 +26,13 @@ update add $p_hostname {$p_hostinfo["ttl"]} $rrtype $p_hostaddr
 send
 ';
 
+$NSUPATE_COMMAND_NODELETE_TEMPLATE = 'server {$p_hostinfo["nameserver"]}
+zone $p_domain
+update add $p_hostname {$p_hostinfo["ttl"]} $rrtype $p_hostaddr
+send
+';
+
+
 
 /**
  * Web page with form for manual entry.
@@ -299,7 +306,7 @@ $p_domain = extract_domain_from_hostname($p_hostname);
 #
 # Check if address has changed.
 #
-if (host_addr_matches($p_hostname, $rrtype, $p_hostaddr, $p_hostinfo['nameserver'])) {
+if (!$_REQUEST['nodelete'] && host_addr_matches($p_hostname, $rrtype, $p_hostaddr, $p_hostinfo['nameserver'])) {
 	send_error(200, "Not updated - address $p_hostaddr already assigned to host $p_hostname.");
 }
 
@@ -310,7 +317,11 @@ $tmpfname = tempnam("", "nsupdate.");
 if (!$tmpfname) {
 	send_error(500, "tempnam failed.");
 }
-eval("\$fcontent = \"$NSUPATE_COMMAND_TEMPLATE\";");
+if ($_REQUEST['nodelete']) {
+    eval("\$fcontent = \"$NSUPATE_COMMAND_NODELETE_TEMPLATE\";");
+} else {
+    eval("\$fcontent = \"$NSUPATE_COMMAND_TEMPLATE\";");
+}
 file_write_string($tmpfname, $fcontent);
 
 
